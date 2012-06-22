@@ -1,0 +1,5 @@
+Short description of those files:
+
+- pbs_reserve.sh:  Run it to reserve your machine, forbiding PBS to put jobs on it for some time. Check its usage.
+- qjobs:  Returns a list of current jobs on PBS, for each users.
+- qmachs: Returns a list of the machines executing jobs right now (rely on pbsnodes, can be incorrect)

@@ -1,0 +1,2 @@
+#!/bin/sh
+pbsnodes | sed -n -e '/^[a-z].*/h' -e '/jobs =/{s/[[:space:]]*jobs =//;y/,/\n/;H}' -e '/^$/{g;p}' | awk '/^[a-z]/ {if (c > 0) {print c"\t"name};c=0;name=$1} /^ / {c+=1;tot+=1} END{print c"\t"name; print "\n"tot"\ttotal"}'
