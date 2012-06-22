@@ -1,0 +1,23 @@
+Welcome to Gitsby.
+
+Gatsby's Incredible collecTive Science By-products repositorY
+
+Or, put it simply, a collection of pieces of code to perform usual tasks that one might want to do while doing Science at the Gatsby Computational Neuroscience Unit.
+
+Checkout the repository or download whatever file is of interest to you.
+
+Please do not break anything.
+
+===============================
+
+CONTENTS:
+
+- General Python tools
+    - Plotting
+    - Data handling
+- General Matlab
+- PBS interfaces
+    - Matlab script 'farmout'
+    - Python package
+
+================================
