@@ -1,0 +1,73 @@
+#!/usr/bin/python
+
+import getpass
+import os
+import subprocess as proc
+import random
+import time
+
+def fprint(xx):
+    stamp = time.strftime("%Y/%m/%d %H:%M:%S")
+    print '[feeder %s] %s' % (stamp, xx)
+
+def num_my_jobs():
+    username = getpass.getuser()
+    qstat = proc.Popen(['qstat'], stdout=proc.PIPE)
+    lines = qstat.communicate()[0].splitlines()
+    return len([line for line in lines if username in line])
+
+def add_job(fname):
+    with open(fname) as ff:
+        lines = ff.read().splitlines()
+
+    # format:
+    #  - 0: "runq 0"
+    #  - 1: working directory
+    #  - 2: cmd
+    if len(lines) < 3:
+        fprint('rejecting %s: truncated job file.' % (fname))
+        return False
+    elif lines[0] != 'runq 0':
+        fprint('rejecting %s: first line is not signature.' % (fname))
+        return False
+    wd = lines[1]
+    cmd = lines[2]
+    fprint('queuing job %s (%s) ...' % (cmd, wd))
+    status = proc.call('qsub '+cmd, shell=True, cwd=wd)
+    return status == 0
+
+def add_jobs(num_add, incoming_dir):
+    incoming = os.listdir(incoming_dir)
+    random.shuffle(incoming)
+    submitted = 0
+    for jobfile in incoming:
+        if submitted >= num_add:
+            break
+        fname = os.path.join(incoming_dir, jobfile)
+        if add_job(fname):
+            os.remove(fname)
+            submitted += 1
+    return submitted
+
+def main():
+    max_jobs = 973
+    threshold_jobs = 739
+    min_period = 30
+    max_period = 600
+    incoming_dir = os.path.join(os.getenv('HOME'), 'runq', 'incoming')
+    fprint('%d-%d jobs from %s' % (threshold_jobs, max_jobs, incoming_dir))
+    fprint('polling at %d-%d seconds' % (min_period, max_period))
+    while True:
+        nn = num_my_jobs()
+        if nn < threshold_jobs:
+            kk = max_jobs - nn
+            submitted = add_jobs(kk, incoming_dir)
+            if submitted:
+                fprint('scheduled %d of %d new jobs.' % (submitted, kk))
+        else:
+            fprint('%d jobs in queue.' % (nn))
+        time.sleep(random.randint(30,600))
+
+if __name__ == '__main__':
+    main()
+
