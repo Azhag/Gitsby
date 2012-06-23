@@ -1,0 +1,159 @@
+#!/usr/bin/python2.7
+# data: lines of whitespace separated fields. duplicate whitespace is treated as
+# one.
+# language:
+# [type:]x[,y[,z]][/options[/filter]]
+# where:
+#   type - {line}
+#   x,y,z -- coords
+#   opt -- depends on type
+#   filter -- coord~regex
+#   coords:
+#       0,1,2,3,...         -- column selectors
+#       r0,r1,r2,...        -- row selectors
+#       0-,1-,2-, ...       -- column selectors and plot duplicator
+#       r0-,r1-,r2-, ...    -- row selectors and plot duplicator
+import re, sys
+from itertools import izip
+from optparse import OptionParser
+import matplotlib.pyplot as plt
+
+def main():
+    parser = OptionParser()
+    parser.add_option('-o', '--output',
+                      dest='output', action='store', type='string', default='/tmp/plot.pdf',
+                      help='PDF file name where result is saved')
+    parser.add_option('-f', '--input',
+                      dest='input', action='store', type='string', default=None,
+                      help='input file')
+    options, args = parser.parse_args()
+    plot_defs = [PlotDef(arg) for arg in args]
+    input = sys.stdin
+    if options.input:
+        input = open(options.input)
+    row = 0
+    line = input.readline().strip()
+    while line:
+        columns = line.replace('\t', ' ').replace(',', ' ').split()
+        for plot_def in plot_defs:
+            plot_def.update_columns(row, columns)
+        row += 1
+        line = input.readline().strip()
+
+    for plot_def in plot_defs:
+        get_plot(plot_def).plot()
+    plt.savefig(options.output)
+
+def get_plot(plot_def):
+    if plot_def.type == 'line':
+        return PlotLine(plot_def)
+    print 'unknown type', plot_def.type
+    assert False
+
+coord = re.compile(r'\s*r?[0-9]+-?\s*')
+class PlotDef(object):
+    def __init__(self, fullspec):
+        spec = fullspec
+        self.type = 'line'
+        self.sources = {}
+        self.data = {}
+        self.options = ''
+        self.filters = []
+        if re.match(r'\w+:', spec):
+            ii = spec.index(':')
+            self.type, spec = spec[:ii], spec[ii+1:]
+        self.sources['xx'], spec = self.match_coord(spec, fullspec)
+        if spec and spec[0] == ',':
+            self.sources['yy'], spec = self.match_coord(spec[1:], fullspec)
+            if spec and spec[0] == ',':
+                self.sources['zz'], spec = self.match_coord(spec[1:], fullspec)
+        if spec and spec[0] == '/':
+            endopt = spec[1:].find('/')
+            self.options = spec[:endopt]
+            spec = spec[endopt+1:]
+        if spec and spec[0] == '/':
+            self.filters = self.parse_filter(spec[1:])
+        for coord in self.sources.keys():
+            self.data[coord] = [[]]
+
+    def match_coord(self, spec, fullspec):
+        match = coord.match(spec)
+        if not match:
+            raise ValueError, "error near `%s' in `%s'" % (spec, fullspec)
+        return spec[:match.end()].strip(), spec[match.end():]
+
+    def parse_filter(self, spec):
+        return [tuple([field.strip() for field in filter.split('~',2)]) for filter in spec.split(',') if filter]
+
+    def __repr__(self):
+        return "PlotDef(\'%s:%s%s%s/%s/%s\')" % (
+                self.type, self.sources['xx'],
+                ','+self.sources['yy'] if 'yy' in self.sources else '',
+                ','+self.sources['zz'] if 'zz' in self.sources else '',
+                self.options, ','.join(['%s~%s' % (coord,regex) for (coord,regex) in self.filters])
+            )
+
+    def update_columns(self, row, columns):
+        for coord in self.sources.keys():
+            self.update_source(coord, row, columns)
+
+    def update_source(self, coord, row, columns):
+        source = self.sources[coord]
+        if source[0] == 'r':
+            self.update_row_source(coord, source[1:], row, columns)
+        else:
+            self.update_column_source(coord, source, columns)
+
+    def update_column_source(self, coord, source, columns):
+        if source[-1] != '-':
+            column_ix = int(source)
+            self.data[coord][0].append(columns[column_ix])
+        else:
+            column_ix = int(source[:-1])
+            for ii, column in enumerate(columns):
+                if len(self.data[coord]) <= ii:
+                    self.data[coord].append([])
+                self.data[coord][ii].append(columns[column_ix+ii])
+
+    def update_row_source(self, coord, source, row, columns):
+        if source[-1] != '-':
+            row_ix = int(source)
+            if row == row_ix:
+                self.data[coord][0].extend(columns)
+        else:
+            row_ix = int(source[:-1])
+            if row >= row_ix:
+                ii = row - row_ix
+                while len(self.data[coord]) <= ii:
+                    self.data[coord].append([])
+                self.data[coord][ii].extend(columns)
+
+class PlotLine(object):
+    def __init__(self, plot_def):
+        self.plot_def = plot_def
+        self.plots = None
+        self.plotter = plt.plot
+        assert plot_def.type == 'line'
+
+    def plot(self):
+        if 'yy' not in self.plot_def.data:
+            self.plot1d()
+        else:
+            assert 'zz' not in self.plot_def.data
+            self.plot2d()
+
+    def plot1d(self):
+        self.plots = [
+                self.plotter(map(float, data), self.plot_def.options)
+                for data in self.plot_def.data['xx']
+            ]
+
+    def plot2d(self):
+        self.plots = [
+                self.plotter(map(float, xdata), map(float, ydata), self.plot_def.options)
+                for xdata, ydata in izip(self.plot_def.data['xx'], self.plot_def.data['yy'])
+            ]
+
+
+if __name__ == '__main__':
+    main()

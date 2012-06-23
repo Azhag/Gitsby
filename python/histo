@@ -1,0 +1,19 @@
+#!/usr/bin/python2.7
+import sys
+import matplotlib.pyplot as plt
+
+bins = None
+if len(sys.argv) > 1:
+    bins = int(sys.argv[1])
+
+x = []
+line = sys.stdin.readline().strip()
+while line:
+    x.append(float(line))
+    line = sys.stdin.readline().strip()
+
+if bins is None:
+    plt.hist(x)
+else:
+    plt.hist(x, bins)
+plt.savefig('/tmp/plot.pdf')

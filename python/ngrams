@@ -1,0 +1,24 @@
+#!/usr/bin/python2.7
+import optparse, sys, re
+
+def main():
+    parser = optparse.OptionParser()
+    parser.add_option('-n', '-o', type="int", dest='order', default=1)
+    options, args = parser.parse_args()
+
+    if not args:
+        process(sys.stdin, options.order)
+    else:
+        for file in args:
+            with open(file) as f:
+                process(f, options.order)
+
+def process(f, order):
+    space = re.compile(r'\s+')
+    contents = space.sub(' ', f.read()).split(' ')
+    for ii in range(len(contents[:-order])):
+        print ' '.join(contents[ii:ii+order])
+
+if __name__ == '__main__':
+    main()
+

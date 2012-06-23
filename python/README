@@ -6,8 +6,17 @@ This folder should contain helper scripts, or anything that could be relevant fo
 
 Think about specific plots manipulations, or data loading/handling.
 
+These programs output a plot in /tmp/plot.pdf by default.
+
 =======
 
 Content:
 
-(empty for now, edit me)
+qq -- produce a Quantile-Quantile plot of the first and second column of input.
+histo -- produce a histogram of the first column of input
+pl -- general line plots. see comments at start of file for usage.
+
+transpose -- swap rows and columns (note: loads entire file into memory)
+rmstop -- remove stop works from a stream of text
+ngrams -- produce all n-grams of text, one per line.
+
