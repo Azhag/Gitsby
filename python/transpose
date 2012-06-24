@@ -1,0 +1,25 @@
+#!/usr/bin/python2.7
+import sys, re
+
+def main():
+    sep = re.compile('\s+')
+    fieldsep = ' '
+    input = sys.stdin
+    if len(sys.argv) > 1:
+        input = open(sys.argv[1])
+
+    line = input.readline().strip()
+    rows = []
+    max_columns = 0
+    while line:
+        columns = sep.split(line)
+        max_columns = max(max_columns, len(columns))
+        rows.append(columns)
+        line = input.readline().strip()
+
+    for i in range(max_columns):
+        print fieldsep.join([rows[j][i] for j in range(len(rows))])
+
+if __name__ == '__main__':
+    main()
+

@@ -1,0 +1,34 @@
+#!/usr/bin/python2.7
+
+import sys, re
+import matplotlib.pyplot as plt
+
+def main():
+    sep = re.compile('\s+')
+    input = sys.stdin
+    if len(sys.argv) > 1:
+        input = sys.argv[1]
+
+    xx = []
+    yy = []
+    line = input.readline().strip()
+    while line:
+        fields = sep.split(line)
+        assert(len(fields) == 2)
+        xx.append(float(fields[0]))
+        yy.append(float(fields[1]))
+        line = input.readline().strip()
+
+    xx.sort()
+    yy.sort()
+    low = min(xx[0], yy[0])
+    high = max(xx[-1], yy[-1])
+    delta = high-low
+    low = low - 0.1*delta
+    high = high + 0.1*delta
+    plt.plot(xx, yy, 'rx-')
+    plt.plot([low, high], [low, high], 'b-')
+    plt.savefig('/tmp/plot.pdf')
+
+if __name__ == '__main__':
+    main()

@@ -1,4 +1,12 @@
 Python scripts for PBS
 
-These are a few classes or functions allowing to send simulations to PBS and then load them back.
+These are a few classes or functions for sending simulations to PBS and then load them back.
+
+feed/feeder -- queue up jobs locally and feed them slowly into PBS.  PBS
+(currently) cannot deal with too many jobs at a time. feeder will trickle jobs
+into the PBS queue so that you do not have too many jobs on the queue.
+feed adds jobs to your local queue.  the typical usage is to run 'feeder' on
+your gatsby machine in a screen, then use 'feed' instead of 'qsub'.
+first you must create the directory ~/runq/incoming/
+
 

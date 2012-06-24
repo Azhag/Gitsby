@@ -1,0 +1,8 @@
+#!/bin/sh
+
+ff=$(mktemp --tmpdir=$HOME/runq/incoming/)
+
+echo runq 0 >"$ff"
+pwd >>"$ff"
+echo "$@" >>"$ff"
+
