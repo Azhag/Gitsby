@@ -1,10 +1,17 @@
 Welcome to Gitsby.
 
-Or, put simply, a collection of pieces of code to perform usual tasks that one might want to do while doing Science at the Gatsby Computational Neuroscience Unit.
+Gitsby is a collection of pieces of code to perform usual tasks that one might want to do while doing Science at the Gatsby Computational Neuroscience Unit.
 
 Checkout the repository or download whatever file is of interest to you.
 
 Please do not break anything.
+
+All those files belong to their original authors (please do cite them if you publish anything here), and come with no support whatsoever, this is academia.
+
+
+Thanks to: Jan Gasthaus, Laurence Aitchison (early discussions and finding the name), Charles Blundell (contributions for PBS shell scripts, Python interface and various python scripts)
+
+Gitsby currently on the account of Loic Matthey, please contact me for Pull requests.
 
 ===============================
 

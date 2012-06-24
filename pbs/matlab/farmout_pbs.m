@@ -23,6 +23,8 @@
 %
 % Example: farmout_pbs('results = 3*options',{1,2,3});
 % Example: farmout_pbs('a = 3*options; b = a*a; results = b;', {1,2,3});
+%
+% Author: Kai Krueger
 
 function [dir_name] = farmout_pbs(cmd, params, names, max_mem, max_time)
 

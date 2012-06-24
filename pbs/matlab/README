@@ -1,0 +1,3 @@
+Matlab script for interfacing with PBS:
+
+- Farmout_pbs.m > Originally written by Kai Krueger. Example of how to call it also available. The script takes a string with the function to execute (do not forget about setting paths in there as well), and an array of parameters (should be flat).

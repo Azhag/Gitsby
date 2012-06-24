@@ -8,5 +8,5 @@ into the PBS queue so that you do not have too many jobs on the queue.
 feed adds jobs to your local queue.  the typical usage is to run 'feeder' on
 your gatsby machine in a screen, then use 'feed' instead of 'qsub'.
 first you must create the directory ~/runq/incoming/
-
+(Charles Blundell)
 
