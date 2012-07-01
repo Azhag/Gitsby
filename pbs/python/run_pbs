@@ -1,0 +1,122 @@
+#!/usr/bin/env python
+import sys
+import re
+import os
+import hashlib
+import stat
+import glob
+from time import sleep
+
+### USER-ADJUSTABLE OPTIONS #################################### 
+DEFAULT_PBS_OPTIONS = {'mem':'2gb','pmem':'2gb', 'walltime':'24:00:00', 'ncpus':'1'}
+
+SCRIPT = """#!/bin/bash
+%s
+cd %s
+nice -n 15 %s
+"""
+
+ENV_KEYS_TO_CAPTURE = frozenset(["PATH", "PYTHONPATH", "LD_LIBRARY_PATH"])
+################################################################ 
+
+def getEnvCommandString(command="export"):
+  out = []
+  out.append(command + " OMP_NUM_THREADS=1")
+  for key in os.environ:
+    if key in ENV_KEYS_TO_CAPTURE:
+      out.append(command + " " + key + '="'+ os.environ[key] + '"')
+  return '\n'.join(out)
+
+
+def make_script(dir, cwd, cmd, opts):
+  fn = dir + "/script." + str(hashlib.md5(cmd).hexdigest())
+  f = open(fn,'w')
+  pbs_options = '\n'.join(["#PBS -l " + i + "=" + j for (i,j) in opts["pbs_options"].items()]) 
+  if "env" in opts:
+    pbs_options = pbs_options + "\n" + getEnvCommandString()
+  f.write(SCRIPT % (pbs_options,cwd,cmd))
+  f.close()
+  os.chmod(fn,stat.S_IXUSR | stat.S_IRUSR | stat.S_IWUSR)
+  return fn
+
+
+def get_options(argv):
+  """Process argument list and check for options
+  that should not be passed through."""
+  out = []
+  opts = {}
+  opts["pbs_options"] = DEFAULT_PBS_OPTIONS
+  for arg in argv:
+    if arg[:6] == "--mem=":
+      opts["pbs_options"]["mem"] = arg[6:]
+      opts["pbs_options"]["pmem"] = arg[6:]
+    elif arg[:5] == "--dry":
+      opts["dry"] = True
+    elif arg[:5] == "--gen":
+      opts["gen"] = True
+    elif arg[:5] == "--env":
+      opts["env"] = True
+    elif arg[:7] == "--block":
+      opts["block"] = True
+    else:
+      out.append(arg)
+  return (opts,out)
+            
+
+def make_dirs(cwd):
+  try:
+    os.mkdir(cwd + "/pbs_scripts")
+  except:
+    pass
+  try:
+    os.mkdir(cwd + "/pbs_output")
+  except:
+    pass
+
+def checkPBSdone(job_id):
+  status = os.popen("qstat %s" % (job_id,)).read()
+  lines = status.split('\n')
+  if len(lines) != 3:
+    return True
+  if lines.split()[4] != "C":
+    return False
+  return True
+
+def usage():
+  print "run_pbs [options]"
+  print
+  print "options:"
+  print "  --gen                 generate only: generate scripts but do not run them"
+  print "  --env                 capture environment in script files"
+  print "  --mem=[memory]        sets mem and pmem PBS options"
+  print "  --block               do not return until all jobs have finished running"
+
+
+def main():
+  if len(sys.argv)==1:
+      usage()
+      return
+  (opts, argv) = get_options(sys.argv[1:])
+  cwd = os.getcwd()
+  make_dirs(cwd)
+  os.chdir(cwd + "/pbs_output")
+  map_f = open(cwd + "/pbs_scripts/submit_all.sh","w")
+  map_f.write("#!/bin/sh\n")
+  job_ids = []
+  for cmd in sys.stdin:
+    fn = make_script(cwd + "/pbs_scripts", cwd, cmd, opts)
+    map_f.write("qsub " + fn + " #" + cmd + '\n')
+    if "gen" not in opts:
+      print "Submitting job " + fn
+      job_ids.append(os.popen("qsub " + fn).read())
+  map_f.close()
+  if "block" in opts:
+    while True:
+      if all([checkPBSdone(job_id) for job_id in job_ids]):
+        break
+      sleep(5)
+
+
+if __name__ == "__main__":
+    main()
+
