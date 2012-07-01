@@ -28,11 +28,11 @@ my_program --data=file1.dat --foo=2 --alpha=0.1
 my_program --data=file1.dat --foo=2 --alpha=0.2 
 [...]
 
-Make sure to put arguments in quotes. See ./build-cmds --help for help 
+Make sure to put arguments in quotes. Run ./build-cmds without arguments for help. (Jan Gasthaus) 
 
 run_pbs -- create pbs job scripts and submit them to PBS. 
-Typical usage is to pipe the output of buld_cmds to this script  to run each of the jobs on pbs. See run_pbs --help for help. Example
+Typical usage is to pipe the output of buld_cmds to this script  to run each of the jobs on pbs. Run run_pbs without arguments for help. Example:
 
 # ./build_cmds time "{1,2}" | run_pbs --gen
 
-will create two directories, pbs_scripts and pbs_output. pbs_scripts will have a file for each input command, and a file called submit_all.sh, which when called will submit all jobs to PBS.  Without --gen the jobs will directly be sumitted to PBS.
+will create two directories, pbs_scripts and pbs_output. pbs_scripts will have a file for each input command, and a file called submit_all.sh, which when called will submit all jobs to PBS.  Without --gen the jobs will directly be sumitted to PBS. (Jan Gasthaus)
