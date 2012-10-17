@@ -1,0 +1,3 @@
+[submodule "python/antaresia"]
+	path = python/antaresia
+	url = https://github.com/jgasthaus/antaresia.git
