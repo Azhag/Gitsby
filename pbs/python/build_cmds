@@ -57,19 +57,19 @@ def expand_range(arg):
             left = int(match.group(3))
             inc = int(match.group(5))
             right = int(match.group(7))
-            return [match.group(1) + str(i) + match.group(9) for i in range(left,right,inc)]
+            return [match.group(1) + str(i) + match.group(9) for i in range(left, right, inc)]
         else:
             import numpy as np
             left = float(match.group(3))
             inc = float(match.group(5))
             right = float(match.group(7))
-            return [match.group(1) + str(i) + match.group(9) for i in np.arange(left,right,inc)]
+            return [match.group(1) + str(i) + match.group(9) for i in np.arange(left, right, inc)]
         
     match = RANGE_RE_1_C.match(arg)
     if match:
         left = int(match.group(2))
         right = int(match.group(3))
-        r = range(left,right+1) # MATLAB-style ranges
+        r = range(left, right+1)  # MATLAB-style ranges
         return [match.group(1) + str(i) + match.group(4) for i in r]
 
 
@@ -81,7 +81,7 @@ def get_options(argv):
     opts = {}
     for arg in argv:
             out.append(arg)
-    return (opts,out)
+    return (opts, out)
             
 
 
@@ -101,10 +101,10 @@ def main():
     if len(sys.argv)==1:
         usage()
         return
-    (opts,argv) = get_options(sys.argv[1:])
+    (opts, argv) = get_options(sys.argv[1:])
     cmds = get_commands(argv)
     for cmd in cmds:
-      print cmd
+        print cmd
 
 if __name__ == "__main__":
     main()
