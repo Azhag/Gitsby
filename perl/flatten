@@ -1,0 +1,23 @@
+#!/usr/bin/perl
+#  Flattens stdin by changing each block of whitespace ( \t\b\n) into a single space
+
+use Getopt::Std;
+my %opt;
+getopts('w', \%opt);
+
+sub flatten(@) {
+  $_ = join ' ', @_;
+  if ($opt{w}) {
+    $_ =~ s// /g;
+  }
+  $_ =~ s/(^\s+|\s+$)//;
+  $_ =~ s/\s+/ /g;
+  print "$_\n"; }
+
+if (@ARGV == 0) {
+  &flatten(<>);
+} else {
+  foreach $file (@ARGV) {
+    open(fd, "<$file");
+    &flatten(<fd>);
+  } }

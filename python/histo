@@ -1,19 +1,96 @@
-#!/usr/bin/python2.7
-import sys
-import matplotlib.pyplot as plt
+#!/usr/bin/env python
 
-bins = None
-if len(sys.argv) > 1:
-    bins = int(sys.argv[1])
+# Allow output without display
+from matplotlib import use
+use('Agg')
+
+import sys
+from numpy import linspace, arange
+from scipy.stats import gaussian_kde
+import re
+import matplotlib.pyplot as plt
+from optparse import OptionParser
+
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+
+parser = OptionParser()
+parser.add_option('-o', '--output',
+  dest='output', action='store', type='string', default='/tmp/plot.pdf',
+  help='PNG file name where result is saved')
+
+parser.add_option('-l', '--xlim',
+  dest='xlim', action='store', type='string', default=None,
+  help='limits of x axis (should be of the form a,b)')
+
+parser.add_option('-d', '--density',
+  dest='density', action='store_true', default=False,
+  help='overlay a gaussian kde')
+
+parser.add_option('-x', '--xaxis',
+  dest='xlabel', action='store', type='string', default='x',
+  help='x axis label')
+
+parser.add_option('-t', '--title',
+  dest='title', action='store', type='string', default='Histogram of x',
+  help='place a title above the histogram')
+
+parser.add_option('--xticks',
+  dest='xticks', action='store', type='float', 
+  help='x tick interval')
+
+parser.add_option('-b', '--bins',
+  dest='num_bins', action='store', type='string', default=None,
+  help='select the number of bins')
+
+parser.add_option('--normed',
+  dest='normed', action='store_true', default=False,
+  help='normalize the rectangles so the y-axis is density rather than count.')
+
+options, args = parser.parse_args()
+
+if len(args) > 0:
+  options.num_bins = int(args[0])
 
 x = []
 line = sys.stdin.readline().strip()
 while line:
-    x.append(float(line))
-    line = sys.stdin.readline().strip()
+  x.append(float(line))
+  line = sys.stdin.readline().strip()
 
-if bins is None:
-    plt.hist(x)
+# Setup the plot
+fg = plt.figure()
+ax = fg.add_subplot(111)
+if options.num_bins == None:
+  ax.hist(x, normed=options.normed,  facecolor='green', edgecolor='green')
+
 else:
-    plt.hist(x, bins)
-plt.savefig('/tmp/plot.pdf')
+  ax.hist(x, int(options.num_bins), normed=options.normed,  facecolor='green', edgecolor='green')    
+
+if options.xlim != None:
+  (a,b) = map(float, re.split('\\s+|,', options.xlim.strip()))
+  plt.xlim(a, b)
+
+else:
+  a = min(x)
+  b = max(x)
+
+if options.density:
+  density = gaussian_kde(x);
+  xs = linspace(a, b, 200)
+  ax.plot(xs, density(xs), 'k')
+  plt.ylabel('density')
+
+else:
+  plt.ylabel('count')
+
+plt.title(options.title)
+plt.xlabel(options.xlabel)
+if options.xlim != None:
+  plt.xlim(a, b)
+
+if options.xticks != None:
+  delta = float(options.xticks)
+  ax.set_xticks(arange(a+delta, b, delta))
+
+plt.savefig(options.output)

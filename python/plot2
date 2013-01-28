@@ -1,0 +1,153 @@
+#!/usr/bin/python
+from matplotlib import use
+use('Agg')
+from pylab import figure, savefig, Polygon
+import scipy
+from scipy.stats.kde import gaussian_kde
+from numpy import hstack, min, max, array
+from sys import stdin
+from optparse import OptionParser
+from re import split
+import warnings
+warnings.filterwarnings('ignore', category=DeprecationWarning)
+
+parser = OptionParser()
+parser.add_option('-o', '--output',
+    dest='output', action='store', type='string', default='/tmp/plot.png',
+    help='PDF file name where result is saved')
+
+parser.add_option('-x', '--xaxis',
+    dest='xlabel', action='store', type='string', default=None,
+    help='x axis label')
+
+parser.add_option('-f', '--fit',
+    dest='linear_fit', action='store_true',
+    help='fit a regression line')                                
+
+parser.add_option('--error',
+    dest='error', action='store_true', default=False,
+    help='every other column is an error bar')
+
+parser.add_option('--xlim',
+    dest='xlim', action='store', type='string', default=None,
+    help='limits of x axis')
+
+parser.add_option('--marker',
+    dest='marker', action='store', type='string', default=None,
+    help='add markers')
+
+parser.add_option('--ylim',
+    dest='ylim', action='store', type='string', default=None,
+    help='limits of y axis')
+
+parser.add_option('-y', '--yaxis',
+    dest='ylabel', action='store', type='string', default=None,
+    help='y axis label')
+
+parser.add_option('-t', '--title',
+    dest='title', action='store', type='string', default=None,
+    help='graph title')
+
+options, args = parser.parse_args()
+
+data = list()
+if len(args) > 0:
+  fp = open(args[0], 'r')
+
+else:
+  fp = stdin
+
+line_num = 0
+headers = None
+
+for line in fp.readlines():
+  cols = split('\s+', line.strip())
+  try:
+    data.append(map(float, cols))  
+
+  except:
+    assert line_num == 0
+    headers = cols
+
+  line_num+=1
+
+data = array(data)
+
+#figure = pyplot.figure()
+colours = ['b', 'r', 'k', 'y']
+ticks = ['.', 'x', '^', 'v', 'x', '.']
+
+fig = figure(figsize=(5, 4.1))
+axis = fig.add_subplot(1, 1, 1)
+
+if options.ylim is not None:
+  limits = split(',', options.ylim)
+  min_y = float(limits[0])
+  max_y = float(limits[1])
+
+else:
+  if options.error:
+    min_y = min(data[:,1::2].flatten() - data[:,2::2].flatten())
+    max_y = max(data[:,1::2].flatten() + data[:,2::2].flatten())
+
+  else:
+    min_y = min(data[:,1:].flatten())
+    max_y = max(data[:,1:].flatten())
+
+if options.xlim is not None:
+  limits = split(',', options.xlim)
+  min_x = float(limits[0])
+  max_x = float(limits[1])
+
+else:
+  min_x = min(data[:,0])
+  max_x = max(data[:,0])
+
+
+if not options.error:
+  for i in range(1, data.shape[1]):
+    axis.plot(data[:,0], data[:,i], colours[i-1] + '-', alpha=0.8)
+
+else:
+  for i in range(1, data.shape[1], 2):
+    colour = colours[(i-1)/2]
+    axis.plot(data[:,0], data[:,i], colour + '-', alpha=0.8)
+
+  for i in range(1, data.shape[1], 2):
+    colour = colours[(i-1)/2]
+    verts = zip(data[:,0], data[:,i] + data[:,i+1]) + zip(data[::-1,0], data[::-1,i] - data[::-1,i+1]) 
+    poly = Polygon(verts, facecolor=colour, edgecolor='none', alpha=0.05)
+    axis.add_patch(poly)
+    axis.plot(data[:,0], data[:,i] + data[:,i+1], colour + '--', alpha=0.05)
+    axis.plot(data[:,0], data[:,i] - data[:,i+1], colour + '--', alpha=0.05)
+
+
+if options.linear_fit:
+  (ar, br) = scipy.polyfit(data[:,0], data[:,1],1)
+  xr = [min_x, max_x]
+  yr = scipy.polyval([ar, br], xr)
+  axis.plot(xr, yr, 'b--')
+
+if options.title is not None:
+  axis.set_title(options.title) 
+
+axis.set_xlabel(options.xlabel)
+axis.set_ylabel(options.ylabel)
+
+axis.set_xlim(min_x, max_x)
+
+axis.set_ylim(min_y, max_y)
+
+if options.marker is not None:
+  markers = split(',', options.marker)
+  ticks = axis.xaxis.get_majorticklocs()
+  for marker in markers:
+    ticks = hstack((ticks, array([float(marker)])))
+
+  axis.xaxis.set_ticks(ticks)
+
+
+if headers != None:
+  axis.legend(headers[1:])
+
+savefig(options.output)

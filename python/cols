@@ -1,0 +1,98 @@
+#!/usr/bin/python
+from sys import stdin, stdout, exit
+from optparse import OptionParser
+from re import split
+import warnings
+warnings.filterwarnings('ignore', category=DeprecationWarning)
+
+parser = OptionParser()
+parser.add_option('-1', 
+    dest='echo_header', action='store_false', default=True,
+    help='do not echo the headers')
+
+parser.add_option('-c',
+    dest='columns', action='store', type='string', default=None,
+    help='which columns to select (indexed from 1')
+
+options, args = parser.parse_args()
+
+def munge(fd):
+  headers = None
+  def isint(s):
+    try:
+      i = int(s)
+      return True
+
+    except:
+      return False
+
+  def process():
+    columns = list()
+    if options.columns == None:
+      columns = range(1, num_cols+1)
+
+    else:
+      which_columns = split(r',', options.columns.strip())
+      for c in which_columns:
+        if isint(c):
+          columns.append(int(c))
+
+        elif c in headers:
+          for ii in range(len(headers)):
+            if headers[ii] == c:
+              columns.append(ii+1)
+
+        else:
+          s = split(r':', c)
+          assert len(s) == 2
+          start = 0
+          stop = num_cols
+          if len(s[0]) > 0:
+            start = int(s[0])-1
+
+          if len(s[1]) > 0:
+            stop = int(s[1])-1
+
+          columns += range(start+1, stop+1)
+
+    return columns
+
+  num_cols = None
+  first_line = True
+  for line in fd.readlines():
+    cols = split(r'\s+', line.strip())
+    if headers == None:
+      headers = cols
+      num_cols = len(cols)
+      columns = process()
+
+    if first_line and not options.echo_header:
+        first_line = False
+        continue
+
+    first = True
+    try:
+      for ii in columns:
+        if first:
+          first = False
+
+        else:
+          stdout.write(' ')
+
+        stdout.write(cols[ii-1])
+
+      stdout.write('\n')
+
+    except:
+      # Broken pipe!
+      exit(0);
+
+
+if len(args) == 0:
+  munge(stdin)
+
+else:
+  for arg in args:
+    fd = open(arg, 'r')
+    munge(fd)
+    fd.close()
