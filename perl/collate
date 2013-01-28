@@ -1,0 +1,27 @@
+#!/usr/bin/perl -w
+#  Collates pdf files together
+#    Usage: collate [-o output.pdf] pdf1.pdf pdf2.pdf ...
+#    output defaults to "collated.pdf"
+
+use strict;
+
+use Getopt::Std qw(getopts);
+
+my %opt;
+getopts("o:", \%opt);
+
+my $files = "";
+foreach my $file(@ARGV) {
+  if ($file =~ /(.*)\.ps$/) {
+    system("ps2pdf $file\n"); 
+    $file = "$1.pdf";
+  }
+  $files .= " $file ";
+}
+
+my $out_file = "collated.pdf"; 
+
+if (exists $opt{o}) {
+  $out_file = $opt{o};
+}
+system("pdftk $files output $out_file\n");

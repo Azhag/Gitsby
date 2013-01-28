@@ -1,0 +1,93 @@
+#!/usr/bin/perl -w
+#  Takes the mean of each column in stdin, optionally echoing a header
+
+use strict;
+use List::Util qw(sum);
+use Scalar::Util qw(looks_like_number);
+use Getopt::Std;
+
+my %opt;
+getopts('hEcp:', \%opt);
+my $precision = exists($opt{p})?$opt{p}:5;
+my $first_line = 1;
+my @headers = ();
+my @means;
+my @which;
+my $N = 0;
+my @lps;
+
+
+while(<>) {
+  chomp;
+  my @cols = split;
+  if ($first_line) {
+    $first_line = 0;
+    foreach (@cols) {
+      push @lps, 0;
+      push @means, 0;
+    }
+    if ($opt{'c'}) {
+      @which = split /,/, $opt{'c'};
+    } else {
+      @which = 0..$#cols;
+    }
+    if (sum(map{!looks_like_number($_)} @cols) > 0) {
+      @headers = @cols;
+      next;
+    }
+  }
+  for my $index (@which) {
+    $means[$index] += $cols[$index];
+  }
+  $N++;
+}
+
+my @mean_strs;
+$first_line = 1;
+foreach my $index (@which) {
+  $means[$index] /= $N;
+  if ($opt{'E'}) {
+    $means[$index] = sprintf("%.3e", $means[$index]);
+  }
+  if ($opt{'p'}) {
+    $means[$index] = sprintf("%." . $opt{p} . "f", $means[$index]);
+  }
+  if ($opt{'h'}) {
+    if ($lps[$index] < length($means[$index])) {
+      $lps[$index] = length($means[$index]);
+    }
+    if ($#headers >= 0) {
+      if ($lps[$index] < length($headers[$index])) {
+        $lps[$index] = length($headers[$index]);
+      }
+    }
+  }
+}
+
+sub print_cols {
+  my @cols = @_;
+  my $first_col = 1;
+  foreach my $index (@which) {
+    my $lp = $lps[$index] - length($cols[$index]);
+    if ($first_col) {
+      $first_col = 0;
+      if ($lp < 0) {
+        $lp = 0;
+      }
+    } else {
+      $lp += 1;
+      if ($lp <= 0) {
+        $lp = 1;
+      }
+    }
+    printf( (" " x $lp) . $cols[$index] );
+  }
+}
+
+if ($#headers > -1) {
+  &print_cols(@headers);
+  printf("\n");
+}
+
+&print_cols(@means);
+printf("\n");

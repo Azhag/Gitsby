@@ -1,0 +1,14 @@
+#!/usr/bin/perl
+#  Exponentiates all numbers in stdin, preserving formatting otherwise
+
+use Scalar::Util qw(looks_like_number);                 
+
+while (<>) {
+  foreach (split) {
+    if (looks_like_number($_)) {
+      print exp($_);
+    } else {
+      print;
+    } print " ";
+  } print "\n";
+}
