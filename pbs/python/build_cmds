@@ -1,0 +1,111 @@
+#!/usr/bin/env python
+import sys
+import re
+import stat
+import glob
+
+# mathches set patterns, eg. "{1,2,3}"
+SET_RE_C = re.compile(r"(.*){([^}]+)}(.*)")
+
+# matches simple ranges, eg. "1:10":
+RANGE_RE_1 = r"(.*?)(\d+):(\d+)(.*)"
+RANGE_RE_1_C = re.compile(RANGE_RE_1)
+FLOAT_RE = r"(\d+(\.\d+)?)"
+
+# ranges with increments, eg. "1.2:0.1:4"
+RANGE_RE_2 = r"(.*?)(" + FLOAT_RE + ":" + FLOAT_RE + ":" + FLOAT_RE + ")(.*)"
+RANGE_RE_2_C = re.compile(RANGE_RE_2)
+
+RANGE_RE_C = re.compile("(" + RANGE_RE_1 + "|" + RANGE_RE_2 + ")")
+GLOB_RE_C = re.compile("(.*)glob:(.+)")
+
+def get_commands(argv):
+    args = []
+    
+    for arg in argv:
+        if SET_RE_C.match(arg):
+            args.append(expand_set(arg))
+        elif RANGE_RE_C.match(arg):
+            args.append(expand_range(arg))
+        elif GLOB_RE_C.match(arg):
+            args.append(expand_glob(arg))
+        else:
+            args.append([arg])
+    
+    current = ['']
+    for arg in args:
+        new_current = []
+        for c in current:
+            new_current.extend([c + " " + i for i in arg])
+        current=new_current
+    return [i[1:] for i in current]
+
+def expand_glob(arg):
+    match = GLOB_RE_C.match(arg)
+    return [match.group(1) + j for j in glob.glob(match.group(2))]
+
+def expand_set(arg):
+    match = SET_RE_C.match(arg)
+    arg = match.group(2)
+    return [match.group(1) + i + match.group(3) for i in arg.split(",")]
+
+def expand_range(arg):
+    match = RANGE_RE_2_C.match(arg)
+    if match:
+        if match.group(4) == None and match.group(6) == None and match.group(8) == None:
+            # all integers
+            left = int(match.group(3))
+            inc = int(match.group(5))
+            right = int(match.group(7))
+            return [match.group(1) + str(i) + match.group(9) for i in range(left, right, inc)]
+        else:
+            import numpy as np
+            left = float(match.group(3))
+            inc = float(match.group(5))
+            right = float(match.group(7))
+            return [match.group(1) + str(i) + match.group(9) for i in np.arange(left, right, inc)]
+        
+    match = RANGE_RE_1_C.match(arg)
+    if match:
+        left = int(match.group(2))
+        right = int(match.group(3))
+        r = range(left, right+1)  # MATLAB-style ranges
+        return [match.group(1) + str(i) + match.group(4) for i in r]
+
+
+
+def get_options(argv):
+    """Process argument list and check for options
+    that should not be passed through."""
+    out = []
+    opts = {}
+    for arg in argv:
+            out.append(arg)
+    return (opts, out)
+            
+
+
+def usage():
+    print "build_cmds [command] [command-options]"
+    print
+    print "command                 command to run"
+    print
+    print "command-options"
+    print "  options are expanded using the following rules:"
+    print '    sets:     e.g. "--foo={1,2,3}"'
+    print '    ranges:   e.g. "--foo=0:0.1:1"'
+    print '    globbing: e.g. "--fn=glob:data/*.dat"'
+    print "  and all resulting combinations are created"
+
+def main():
+    if len(sys.argv)==1:
+        usage()
+        return
+    (opts, argv) = get_options(sys.argv[1:])
+    cmds = get_commands(argv)
+    for cmd in cmds:
+        print cmd
+
+if __name__ == "__main__":
+    main()
+

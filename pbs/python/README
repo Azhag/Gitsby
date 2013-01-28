@@ -8,5 +8,31 @@ into the PBS queue so that you do not have too many jobs on the queue.
 feed adds jobs to your local queue.  the typical usage is to run 'feeder' on
 your gatsby machine in a screen, then use 'feed' instead of 'qsub'.
 first you must create the directory ~/runq/incoming/
+(Charles Blundell)
 
+build_cmds -- easily build command lines for parameter sweeps, e.g.:
 
+# ./build_cmds my_program "--data={file1.dat,file2.dat}" "--foo={1,2,3,4}" "--alpha=0:0.1:1"
+my_program --data=file1.dat --foo=1 --alpha=0.0
+my_program --data=file1.dat --foo=1 --alpha=0.1
+my_program --data=file1.dat --foo=1 --alpha=0.2
+my_program --data=file1.dat --foo=1 --alpha=0.3
+my_program --data=file1.dat --foo=1 --alpha=0.4
+my_program --data=file1.dat --foo=1 --alpha=0.5
+my_program --data=file1.dat --foo=1 --alpha=0.6
+my_program --data=file1.dat --foo=1 --alpha=0.7
+my_program --data=file1.dat --foo=1 --alpha=0.8
+my_program --data=file1.dat --foo=1 --alpha=0.9
+my_program --data=file1.dat --foo=2 --alpha=0.0
+my_program --data=file1.dat --foo=2 --alpha=0.1
+my_program --data=file1.dat --foo=2 --alpha=0.2 
+[...]
+
+Make sure to put arguments in quotes. Run ./build-cmds without arguments for help. (Jan Gasthaus) 
+
+run_pbs -- create pbs job scripts and submit them to PBS. 
+Typical usage is to pipe the output of buld_cmds to this script  to run each of the jobs on pbs. Run run_pbs without arguments for help. Example:
+
+# ./build_cmds time "{1,2}" | run_pbs --gen
+
+will create two directories, pbs_scripts and pbs_output. pbs_scripts will have a file for each input command, and a file called submit_all.sh, which when called will submit all jobs to PBS.  Without --gen the jobs will directly be sumitted to PBS. (Jan Gasthaus)
