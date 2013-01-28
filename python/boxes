@@ -1,0 +1,246 @@
+#!/usr/bin/env python
+
+# Allow output without display
+from matplotlib import use
+use('Agg')
+
+import sys
+from optparse import OptionParser
+import matplotlib.pyplot as plt
+from pylab import figure, boxplot, savefig, arange, xticks, legend, hold, subplot, setp, plot, Rectangle
+from pylab import xlabel, ylabel, title
+
+from scipy import polyval, polyfit
+import operator as op
+from sys import stdin
+from itertools import *
+import re
+
+parser = OptionParser()
+parser.add_option('-o', '--output',
+  dest='output', action='store', type='string', default='plot.pdf',
+  help='PDF file name where result is saved')
+
+parser.add_option('-j', '--join',
+  dest='join', action='store', type='string', default=None,
+  help='which columns to join on')
+
+parser.add_option('-g', '--group',
+  dest='group', action='store', type='string', default=None,
+  help='which rows to group together')
+
+parser.add_option('-c', '--columns',
+  dest='which', action='store', type='string', default=None,
+  help='which columns to plot')
+
+parser.add_option('-H', '--headers',
+  dest='headers', action='store_true', default=False,
+  help='Force the first row to be interpreted as headers')
+
+parser.add_option('-x', '--xaxis',
+  dest='xlabel', action='store', type='string', default=None,
+  help='x axis label')
+
+parser.add_option('-y', '--yaxis',
+  dest='ylabel', action='store', type='string', default=None,
+  help='y axis label')
+
+parser.add_option('--ylim', '--ylim',
+  dest='ylim', action='store', type='string', default=None,
+  help='y limits')
+
+
+parser.add_option('-t', '--title',
+  dest='title', action='store', type='string', default=None,
+  help='graph title')
+
+
+options, args = parser.parse_args()
+
+headers = None
+num_cols = None
+first = True
+line = stdin.readline()
+cols = re.split('[\\s]+|,', line.strip())
+num_cols = len(cols)
+
+if options.ylim != None:
+  (ylima,ylimb) = map(float, re.split('\\s+|,', options.ylim.strip()))
+
+which = None
+if options.which != None:
+  if options.which.endswith(':'):
+    which = range(int(options.which.rstrip(':')), num_cols)
+
+  else:
+    which = map(int, re.split('\s*,\s*', options.which.strip()))
+
+join = None
+if options.join != None:
+  join = int(options.join.strip())
+
+group = None
+if options.group != None:
+  group = int(options.group.strip())
+
+assert((join == None) or (group == None))
+
+from numpy import inf
+M = -inf
+m = inf
+
+while line:
+  cols = re.split('[\\s]+|,', line.strip())
+  if first:
+    if which == None:
+      which = range(num_cols)
+
+    if join != None or group != None:
+      data = dict()
+
+    else:
+      data = [[] for i in range(len(which))]
+
+  assert which != None
+  if first and options.headers:
+    headers = list()
+    for i in range(len(which)):
+      headers.append(cols[which[i]])
+
+  else:
+    try:
+      fields = map(float, map(cols.__getitem__, which))
+
+    except ValueError:
+      assert first
+      headers = list()
+      for i in range(len(which)):
+        headers.append(cols[which[i]])
+
+  if headers == None or not first:
+    for i in range(len(which)):
+      y = fields[i]
+      if y > M:
+        M = y
+
+      if y < m:
+        m = y
+
+      if join != None:
+        try:
+          data[cols[join].strip()][i].append(fields[i])
+
+        except KeyError:
+          data[cols[join].strip()] = [[] for i in range(len(which))]
+          data[cols[join].strip()][i].append(fields[i])
+
+      elif group != None:
+        if not headers[i] in data:
+          data[headers[i]] = dict()
+
+        if not cols[group].strip() in data[headers[i]]:
+          data[headers[i]][cols[group].strip()] = list()
+
+        data[headers[i]][cols[group].strip()].append(fields[i])
+
+      else:
+        data[i].append(fields[i])
+
+  line = stdin.readline()
+  first = False
+
+ax = figure().add_subplot(111)
+
+colours_full = ['blue', 'red', 'green', 'magenta', 'yellow', 'black']
+colours = ['b', 'r', 'g', 'm', 'y', 'k']
+
+if join != None:
+  plid = 0
+  leg = list()
+  met = list()
+  for key in data.keys():
+    pos = arange(len(which)) + 1 + (plid + 1.5 - len(which)/2.0)/len(which)
+    bp = ax.boxplot(data[key], positions=pos, widths=0.75/len(which))
+
+    setp(bp['boxes'], color=colours_full[plid])
+    setp(bp['whiskers'], color=colours_full[plid])
+    setp(bp['fliers'], color=colours_full[plid])
+    setp(bp['medians'], color=colours_full[plid])
+    setp(bp['caps'], color=colours_full[plid])
+
+    ax.set_ylim(m - 0.01, M + 0.01)
+    ax.set_xlim(0, len(which)+1)
+    met.append(key)
+    leg.append(Rectangle((0, 0), 1, 1, fc=colours[plid]))
+
+    plid += 1
+    if not plid == len(data.keys()):
+      ax = ax.twinx()
+
+    if options.ylim != None:
+      ax.set_ylim(ylima, ylimb)
+
+    if options.xlabel is not None:
+      xlabel(options.xlabel)
+
+  legend(leg, met)
+  pos = arange(len(which))
+  xticks(pos + 1, headers)
+
+elif group != None:
+  leg = list()
+  met = list()
+  plid = 0
+  names = sorted(list(data[headers[0]].keys()))
+  for header in headers:
+    pos = arange(len(names)) + 1 + (plid + 1.5 - len(which)/2.0)/(1.0+len(which))
+
+    frame = list()
+    for name in names:
+      frame.append(data[header][name])
+
+    bp = ax.boxplot(frame, positions=pos, widths=0.75/(1.0 + len(which)))
+    setp(bp['boxes'], color=colours_full[plid])
+    setp(bp['whiskers'], color=colours_full[plid])
+    setp(bp['fliers'], color=colours_full[plid])
+    setp(bp['medians'], color=colours_full[plid])
+    setp(bp['caps'], color=colours_full[plid])
+
+    if options.ylim != None:
+      ax.set_ylim(ylima, ylimb)
+
+    else:
+      ax.set_ylim(m - 0.01, M + 0.01)
+
+    ax.set_xlim(0, len(names)+1)
+
+    met.append(header.replace('%', '\\%'))
+    leg.append(Rectangle((0, 0), 1, 1, fc=colours[plid]))
+    if options.xlabel is not None:
+      xlabel(options.xlabel)
+
+    plid += 1
+    if not plid == len(data.keys()):
+      ax = ax.twinx()
+
+  legend(leg, met, loc=3)
+  pos = arange(len(names))
+  xticks(pos + 1, names)
+
+else:
+  ax.boxplot(data)
+
+  if headers != None:
+    pos = arange(len(which))
+    xticks(pos + 1, headers)
+
+if options.title is not None:
+  title(options.title)
+
+if options.xlabel is not None:
+  xlabel(options.xlabel)
+
+if options.ylabel is not None:
+  ylabel(options.ylabel)
+
+savefig(options.output)
