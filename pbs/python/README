@@ -1,8 +1,13 @@
 Python scripts for PBS
 
+======
+
 These are a few classes or functions for sending simulations to PBS and then load them back.
 
-feed/feeder -- queue up jobs locally and feed them slowly into PBS.  PBS
+Authors: Charles Blundell, Jan Gasthaus, Loic Matthey
+======
+
+* feed/feeder -- queue up jobs locally and feed them slowly into PBS.  PBS
 (currently) cannot deal with too many jobs at a time. feeder will trickle jobs
 into the PBS queue so that you do not have too many jobs on the queue.
 feed adds jobs to your local queue.  the typical usage is to run 'feeder' on
@@ -10,7 +15,9 @@ your gatsby machine in a screen, then use 'feed' instead of 'qsub'.
 first you must create the directory ~/runq/incoming/
 (Charles Blundell)
 
-build_cmds -- easily build command lines for parameter sweeps, e.g.:
+
+
+* build_cmds -- easily build command lines for parameter sweeps, e.g.:
 
 # ./build_cmds my_program "--data={file1.dat,file2.dat}" "--foo={1,2,3,4}" "--alpha=0:0.1:1"
 my_program --data=file1.dat --foo=1 --alpha=0.0
@@ -30,9 +37,18 @@ my_program --data=file1.dat --foo=2 --alpha=0.2
 
 Make sure to put arguments in quotes. Run ./build-cmds without arguments for help. (Jan Gasthaus) 
 
-run_pbs -- create pbs job scripts and submit them to PBS. 
+* run_pbs -- create pbs job scripts and submit them to PBS. 
 Typical usage is to pipe the output of buld_cmds to this script  to run each of the jobs on pbs. Run run_pbs without arguments for help. Example:
 
 # ./build_cmds time "{1,2}" | run_pbs --gen
 
 will create two directories, pbs_scripts and pbs_output. pbs_scripts will have a file for each input command, and a file called submit_all.sh, which when called will submit all jobs to PBS.  Without --gen the jobs will directly be sumitted to PBS. (Jan Gasthaus)
+
+
+* submitpbs.py -- SubmitPBS class, allowing you to create and submit PBS jobs directly from within your python scripts.
+
+Also provides a function to generate parameter sets (on a grid or randomly sampling them), optionally filtering them with a function of your choosing, and then spawning sub-scripts to be run on PBS.
+
+Quite good for random sampling of a big space, where you just let the parameter generator run and it will find and spawn multiple PBS jobs for you. (Loic Matthey)
+
+Usage example in the __main__

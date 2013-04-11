@@ -22,3 +22,4 @@ rmstop -- remove stop works from a stream of text (CB)
 ngrams -- produce all n-grams of text, one per line. (CB)
 
 utils.py -- Random collection of simple useful functions. Contains some plotting, some math, some fitting and others. (LM)
+dataio.py -- Simple class to save variables and figures to disk. Handles random filenames, and writes Git informations along with the variables and into the metadata of the figures directly. You'll never forget which version of the code you used to generate figures with now :)
