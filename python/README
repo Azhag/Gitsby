@@ -8,7 +8,7 @@ Think about specific plots manipulations, or data loading/handling.
 
 These programs output a plot in /tmp/plot.pdf by default.
 
-Authors: Charles Blundell (CB)
+Authors: Charles Blundell (CB), Loic Matthey (LM)
 =======
 
 Content:
@@ -21,3 +21,4 @@ transpose -- swap rows and columns (note: loads entire file into memory) (CB)
 rmstop -- remove stop works from a stream of text (CB)
 ngrams -- produce all n-grams of text, one per line. (CB)
 
+utils.py -- Random collection of simple useful functions. Contains some plotting, some math, some fitting and others. (LM)
