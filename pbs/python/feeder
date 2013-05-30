@@ -36,9 +36,10 @@ def add_job(fname):
     status = proc.call('qsub '+cmd, shell=True, cwd=wd)
     return status == 0
 
-def add_jobs(num_add, incoming_dir):
+def add_jobs(num_add, incoming_dir, randomize_run=False):
     incoming = os.listdir(incoming_dir)
-    random.shuffle(incoming)
+    if randomize_run:
+        random.shuffle(incoming)
     submitted = 0
     for jobfile in incoming:
         if submitted >= num_add:
@@ -54,6 +55,8 @@ def main():
     threshold_jobs = 739
     min_period = 30
     max_period = 600
+    randomize_run = True
+    
     incoming_dir = os.path.join(os.getenv('HOME'), 'runq', 'incoming')
     fprint('%d-%d jobs from %s' % (threshold_jobs, max_jobs, incoming_dir))
     fprint('polling at %d-%d seconds' % (min_period, max_period))
@@ -61,12 +64,12 @@ def main():
         nn = num_my_jobs()
         if nn < threshold_jobs:
             kk = max_jobs - nn
-            submitted = add_jobs(kk, incoming_dir)
+            submitted = add_jobs(kk, incoming_dir, randomize_run=randomize_run)
             if submitted:
                 fprint('scheduled %d of %d new jobs.' % (submitted, kk))
         else:
             fprint('%d jobs in queue.' % (nn))
-        time.sleep(random.randint(30,600))
+        time.sleep(random.randint(min_period, max_period))
 
 if __name__ == '__main__':
     main()
