@@ -1,0 +1,3 @@
+#!/bin/sh
+squeue | tail -n +2 | awk '{print $5" "$4}' | sort | uniq -c | sort -rn | \
+awk '{ if ($2 ~ /R/) { s+= $1; } print $1"\t"$2"\t"$3; } END { print "\n"s"\ttotal running" }'
